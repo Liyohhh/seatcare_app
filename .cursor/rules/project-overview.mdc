@@ -1,0 +1,36 @@
+---
+description: Core context for the Waby smart baby car seat project — stack, hardware, backend, alert logic, and conventions. Read this before generating any code.
+alwaysApply: true
+---
+
+# Waby — Project Overview
+
+Waby is a **smart baby car seat safety system** built as a final-year project (solo developer, ~2-week build deadline — prioritise working functionality over visual polish). It monitors an infant in a car seat and sends escalating alerts to prevent child endangerment.
+
+## Stack
+- **App:** Flutter (Dart, null-safe).
+- **Firmware:** ESP32 (Arduino / C++).
+- **Backend / API / database:** Firebase Realtime Database (free Spark plan).
+- **Data flow:** ESP32 → WiFi → Firebase; the Flutter app reads live data from Firebase. (Bluetooth appears in the UI but Firebase carries the real data.)
+
+## Hardware sensors
+FSR (presence/weight), auto-detect buckle, DHT11 (temperature), GPS NEO-6M, ESP32. Outputs: LED indicators + buzzer for alarms.
+
+## Firebase structure
+- `seatcare/live/` — current sensor readings (temperature, presence, buckled, distance, status).
+- `seatcare/contacts/` — next-of-kin records (this is the CRUD feature: add / edit / delete).
+- `seatcare/logs/` — one entry per alarm event (used as the "real detection data" test evidence).
+
+## Alert logic (authoritative — do not silence danger cases)
+- No weight → idle, no alarms.
+- Weight + NOT buckled + caregiver near → **buckle reminder** (gentle).
+- Weight + caregiver FAR → **left-behind alarm**, regardless of buckle state.
+- Weight + temperature over threshold → **heat alarm**.
+- Escalation: L1 phone notification → L2 loud on-device alarm → L3 notify next-of-kin with GPS.
+
+## Conventions
+- Folder structure: `core/`, `models/`, `screens/`, `services/`, `widgets/`.
+- Use `StreamBuilder` for live Firebase data.
+- All colours/fonts come from `lib/core/theme.dart` — never hard-code colours in widgets.
+- Keep business logic in `services/`, not in widgets.
+- The app is being renamed from "SeatCare" to **Waby** — use Waby in all user-facing text.
