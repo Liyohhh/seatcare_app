@@ -1,8 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'core/theme.dart';
+import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Connectivity test — writes a value you'll see in the Firebase console.
+  await FirebaseDatabase.instance.ref('seatcare/test').set({
+    'message': 'Hello from Waby!',
+    'time': DateTime.now().toIso8601String(),
+  });
+
   runApp(const WabyApp());
 }
 
