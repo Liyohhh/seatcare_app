@@ -1,22 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme.dart';
-import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  await Supabase.initialize(
+    url: 'https://pvafygrloelptlmnhfog.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2YWZ5Z3Jsb2VscHRsbW5oZm9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTI1NjQsImV4cCI6MjA5ODA2ODU2NH0.Ak3Iu6i9F0OzSFRgTfyzX8UtEIQbIe3Bz6gT_b1sI60',
   );
-
-  // Connectivity test — writes a value you'll see in the Firebase console.
-  await FirebaseDatabase.instance.ref('seatcare/test').set({
-    'message': 'Hello from Waby!',
-    'time': DateTime.now().toIso8601String(),
-  });
-
   runApp(const WabyApp());
 }
 
@@ -33,3 +26,6 @@ class WabyApp extends StatelessWidget {
     );
   }
 }
+
+/// Shortcut to the Supabase client, usable anywhere in the app.
+final supabase = Supabase.instance.client;
