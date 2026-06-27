@@ -7,8 +7,8 @@ class AppColors {
   // Brand
   static const navy         = Color(0xFF0F2D54); // primary buttons, headings
   static const navyDeep     = Color(0xFF0D1117); // logo wings / darkest text
-  static const headerTop    = Color(0xFF4696B7); // wave-header gradient start
-  static const headerBottom = Color(0xFF4C9DBC); // wave-header gradient end
+  static const headerTop    = Color(0xFF008FB4); // wave-header gradient start (dark)
+  static const headerBottom = Color(0xFF7AD0E4); // wave-header gradient end (light)
   static const accent       = Color(0xFF3B74BC); // links, info pills
   static const value        = Color(0xFF5187C6); // big stat numbers
   static const dot          = Color(0xFF2AAEE0); // logo dot / bright accent
@@ -34,6 +34,7 @@ const kHeaderGradient = LinearGradient(
   begin: Alignment.topCenter,
   end: Alignment.bottomCenter,
   colors: [AppColors.headerTop, AppColors.headerBottom],
+  stops: [0.31, 0.88],
 );
 
 class AppTheme {
