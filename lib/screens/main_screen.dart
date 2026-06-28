@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import 'home_screen.dart';
 import 'contacts_screen.dart';
+import 'settings_screen.dart';
 
 /// Wraps the app's main tabs in a bottom navigation bar.
 class MainScreen extends StatefulWidget {
@@ -17,7 +18,7 @@ class _MainScreenState extends State<MainScreen> {
   late final List<Widget> _pages = [
     const HomeScreen(),
     ContactsScreen(showBack: false), // Family tab = emergency contacts (CRUD)
-    const _SettingsPlaceholder(),
+    const SettingsScreen(),
   ];
 
   @override
@@ -49,18 +50,6 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _SettingsPlaceholder extends StatelessWidget {
-  const _SettingsPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Settings — coming soon',
-          style: TextStyle(color: AppColors.textSecondary)),
     );
   }
 }

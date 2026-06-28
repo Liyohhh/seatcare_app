@@ -16,25 +16,25 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _header(),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             _sounds(),
             const SizedBox(height: 16),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: const [
                   _ChildCard(
                     name: 'Jason Tan',
-                    info: 'DOB: 15 Jan 2026\nWeight: 8.5kg | Height: 73cm',
+                    info: 'DOB: 15 Jan 2026\nWeight: 8.5 kg · Height: 73 cm',
                     safe: true,
                     buckled: true,
                     near: true,
                     battery: 88,
                   ),
-                  SizedBox(height: 14),
+                  SizedBox(height: 16),
                   _ChildCard(
                     name: 'Nur Alysha',
-                    info: 'DOB: 15 Jan 2026\nWeight: 8.5kg | Height: 73cm',
+                    info: 'DOB: 20 Mar 2025\nWeight: 7.2 kg · Height: 68 cm',
                     safe: false,
                     buckled: false,
                     near: false,
@@ -43,9 +43,9 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: ElevatedButton(
                 onPressed: () {},
                 child: const Text('Add Device'),
@@ -207,16 +207,16 @@ class HomeScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: 20),
           child: Text('Favourite Sounds',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         SizedBox(
           height: 44,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             children: [
               _soundChip(Icons.play_arrow, 'Rainyday'),
               const SizedBox(width: 10),
@@ -275,10 +275,10 @@ class _ChildCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: safe ? AppColors.safeCard : AppColors.warningCard,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
@@ -303,7 +303,7 @@ class _ChildCard extends StatelessWidget {
                             fontSize: 18, fontWeight: FontWeight.w700)),
                     Text(info,
                         style: const TextStyle(
-                            fontSize: 10, color: AppColors.textSecondary, height: 1.5)),
+                            fontSize: 12, color: AppColors.textSecondary, height: 1.5)),
                   ],
                 ),
               ),
@@ -312,13 +312,13 @@ class _ChildCard extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
                   color: safe ? AppColors.safe : AppColors.warning,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(safe ? 'SAFE' : 'WARNING',
                     style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 12)),
+                        fontSize: 11)),
               ),
             ],
           ),
@@ -344,7 +344,7 @@ class _ChildCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: safe ? AppColors.accent : AppColors.warning,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
