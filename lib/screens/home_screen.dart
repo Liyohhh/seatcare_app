@@ -1,5 +1,6 @@
 import 'dart:math' show pi;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/theme.dart';
 
 /// Waby home dashboard. Uses static/mock values for now — temperature and the
@@ -26,16 +27,25 @@ class HomeScreen extends StatelessWidget {
                   _ChildCard(
                     name: 'Jason Tan',
                     info: 'DOB: 15 Jan 2026\nWeight: 8.5 kg · Height: 73 cm',
-                    safe: true,
+                    status: _CardStatus.safe,
                     buckled: true,
                     near: true,
                     battery: 88,
                   ),
                   SizedBox(height: 16),
                   _ChildCard(
+                    name: 'Baby Ali',
+                    info: 'DOB: 10 Jun 2025\nWeight: 6.8 kg · Height: 65 cm',
+                    status: _CardStatus.caution,
+                    buckled: true,
+                    near: true,
+                    battery: 11,
+                  ),
+                  SizedBox(height: 16),
+                  _ChildCard(
                     name: 'Nur Alysha',
                     info: 'DOB: 20 Mar 2025\nWeight: 7.2 kg · Height: 68 cm',
-                    safe: false,
+                    status: _CardStatus.warning,
                     buckled: false,
                     near: false,
                     battery: 15,
@@ -46,12 +56,14 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: ElevatedButton(
-                onPressed: () {},
-                child: const Text('Add Device'),
+              child: Builder(
+                builder: (ctx) => ElevatedButton(
+                  onPressed: () => _showAddDeviceSheet(ctx),
+                  child: const Text('Add Device'),
+                ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 110),
           ],
         ),
       ),
@@ -254,11 +266,158 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-/// A single child's status card (tinted blue when safe, pink when warning).
+// ── Card status enum ──────────────────────────────────────────────────────────
+
+enum _CardStatus { safe, caution, warning }
+
+// ── BLE Add-Device sheet ──────────────────────────────────────────────────────
+
+Future<void> _showAddDeviceSheet(BuildContext context) async {
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => const _AddDeviceSheet(),
+  );
+}
+
+class _AddDeviceSheet extends StatefulWidget {
+  const _AddDeviceSheet();
+
+  @override
+  State<_AddDeviceSheet> createState() => _AddDeviceSheetState();
+}
+
+class _AddDeviceSheetState extends State<_AddDeviceSheet> {
+  static const _channel = MethodChannel('waby/bluetooth');
+  bool _scanning = false;
+  String? _connectedName;
+  String? _error;
+
+  Future<void> _scan() async {
+    setState(() { _scanning = true; _error = null; _connectedName = null; });
+    try {
+      final name = await _channel.invokeMethod<String>('showDevicePicker');
+      if (!mounted) return;
+      setState(() { _scanning = false; _connectedName = name; });
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _scanning = false;
+        if (e.code != 'CANCELLED') _error = e.message ?? 'Scan failed.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 36),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Container(
+            width: 40, height: 4,
+            decoration: BoxDecoration(
+              color: Colors.black12,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          const Text('Add Device',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold,
+                  color: AppColors.navy)),
+          const SizedBox(height: 6),
+          const Text('Tap Scan to find nearby Waby seat devices.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+          const SizedBox(height: 28),
+
+          // Status icon
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _connectedName != null
+                ? const Icon(Icons.check_circle, size: 64,
+                    color: Color(0xFF56B337), key: ValueKey('ok'))
+                : Icon(
+                    _scanning ? Icons.bluetooth_searching : Icons.bluetooth,
+                    size: 64, color: AppColors.accent,
+                    key: ValueKey(_scanning.toString())),
+          ),
+          const SizedBox(height: 16),
+
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: Text(
+              _connectedName != null
+                  ? 'Paired with $_connectedName'
+                  : _scanning ? 'Opening device picker…' : 'No device paired yet',
+              key: ValueKey(_connectedName ?? _scanning.toString()),
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: _connectedName != null
+                      ? const Color(0xFF56B337)
+                      : AppColors.textSecondary),
+            ),
+          ),
+
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFE8E8),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(children: [
+                const Icon(Icons.error_outline,
+                    color: AppColors.warning, size: 16),
+                const SizedBox(width: 8),
+                Expanded(child: Text(_error!,
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.warning))),
+              ]),
+            ),
+          ],
+
+          const SizedBox(height: 28),
+
+          if (!_scanning && _connectedName == null)
+            ElevatedButton.icon(
+              onPressed: _scan,
+              icon: const Icon(Icons.bluetooth_searching),
+              label: const Text('Scan for Devices'),
+            )
+          else if (_scanning)
+            const SizedBox(
+              height: 36, width: 36,
+              child: CircularProgressIndicator(
+                  strokeWidth: 3, color: AppColors.accent),
+            )
+          else
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Done'),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Child status card ─────────────────────────────────────────────────────────
+
 class _ChildCard extends StatelessWidget {
   final String name;
   final String info;
-  final bool safe;
+  final _CardStatus status;
   final bool buckled;
   final bool near;
   final int battery;
@@ -266,18 +425,43 @@ class _ChildCard extends StatelessWidget {
   const _ChildCard({
     required this.name,
     required this.info,
-    required this.safe,
+    required this.status,
     required this.buckled,
     required this.near,
     required this.battery,
   });
+
+  Color get _cardBg => switch (status) {
+        _CardStatus.safe    => AppColors.safeCard,
+        _CardStatus.caution => const Color(0xFFFFF8E1),
+        _CardStatus.warning => AppColors.warningCard,
+      };
+
+  Color get _accentColor => switch (status) {
+        _CardStatus.safe    => AppColors.safe,
+        _CardStatus.caution => const Color(0xFFF59E0B),
+        _CardStatus.warning => AppColors.warning,
+      };
+
+  // Caution pills stay blue — latched+near are fine, only battery is low.
+  Color get _pillColor => switch (status) {
+        _CardStatus.safe    => AppColors.accent,
+        _CardStatus.caution => AppColors.accent,
+        _CardStatus.warning => AppColors.warning,
+      };
+
+  String get _badgeLabel => switch (status) {
+        _CardStatus.safe    => 'SAFE',
+        _CardStatus.caution => 'CAUTION',
+        _CardStatus.warning => 'WARNING',
+      };
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: safe ? AppColors.safeCard : AppColors.warningCard,
+        color: _cardBg,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -303,18 +487,19 @@ class _ChildCard extends StatelessWidget {
                             fontSize: 18, fontWeight: FontWeight.w700)),
                     Text(info,
                         style: const TextStyle(
-                            fontSize: 12, color: AppColors.textSecondary, height: 1.5)),
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            height: 1.5)),
                   ],
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: safe ? AppColors.safe : AppColors.warning,
+                  color: _accentColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(safe ? 'SAFE' : 'WARNING',
+                child: Text(_badgeLabel,
                     style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -330,7 +515,10 @@ class _ChildCard extends StatelessWidget {
               const SizedBox(width: 8),
               _pill(Icons.location_on, near ? 'Near' : 'Far'),
               const SizedBox(width: 8),
-              _pill(Icons.battery_full, '$battery%'),
+              _pill(
+                battery <= 20 ? Icons.battery_alert : Icons.battery_full,
+                '$battery%',
+              ),
             ],
           ),
         ],
@@ -343,7 +531,7 @@ class _ChildCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: safe ? AppColors.accent : AppColors.warning,
+          color: _pillColor,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -354,7 +542,8 @@ class _ChildCard extends StatelessWidget {
             Flexible(
               child: Text(label,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 12)),
+                  style:
+                      const TextStyle(color: Colors.white, fontSize: 12)),
             ),
           ],
         ),

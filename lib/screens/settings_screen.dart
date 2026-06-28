@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
+import '../models/contact.dart';
+import '../services/auth_service.dart';
+import '../services/contact_service.dart';
+import 'login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -81,9 +85,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _sectionLabel('Connectivity & Access'),
             const SizedBox(height: _kLabelCardGap),
             _card([
-              _navRow(Icons.bluetooth,       'Bluetooth Devices',  subtitle: 'Not connected'),
+              _navRow(Icons.bluetooth,       'Bluetooth Devices',  subtitle: 'Not connected',
+                  onTap: () => _showBluetoothDialog()),
               _divider(),
-              _navRow(Icons.people_outlined, 'Family Management',  subtitle: '3 members'),
+              _navRow(Icons.people_outlined, 'Family Management',  subtitle: '3 members',
+                  onTap: () => _showFamilyManagement()),
             ]),
             const SizedBox(height: _kSectionGap),
 
@@ -142,40 +148,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: _kGutter),
       child: _cardContainer(
-        child: Row(
-          children: [
-            // Avatar
-            Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                color: _kIconBg,
-                shape: BoxShape.circle,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: _kGutter, vertical: _kRowV),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: _kIconBg,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.person, color: AppColors.accent, size: 26),
               ),
-              child: const Icon(Icons.person, color: AppColors.accent, size: 26),
-            ),
-            const SizedBox(width: 14),
-            // Name & label
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text('Mom',
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary)),
-                  SizedBox(height: 2),
-                  Text('Account owner',
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary)),
-                ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text('Mom',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary)),
+                    SizedBox(height: 2),
+                    Text('Account owner',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary)),
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.chevron_right,
-                color: AppColors.textSecondary, size: 22),
-          ],
+              const Icon(Icons.chevron_right,
+                  color: AppColors.textSecondary, size: 22),
+            ],
+          ),
         ),
       ),
     );
@@ -353,11 +361,77 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // ── Bluetooth dialog ──────────────────────────────────────────────────────
+
+  void _showBluetoothDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: const [
+          Icon(Icons.bluetooth, color: AppColors.accent, size: 22),
+          SizedBox(width: 10),
+          Text('Bluetooth Devices',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        ]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF4F6F9),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.bluetooth_disabled,
+                      color: AppColors.textSecondary, size: 20),
+                  SizedBox(width: 8),
+                  Flexible(
+                    child: Text('No Bluetooth devices connected',
+                        style: TextStyle(
+                            fontSize: 13, color: AppColors.textSecondary)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Close',
+                style: TextStyle(
+                    color: AppColors.accent, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Family management sheet ───────────────────────────────────────────────
+
+  void _showFamilyManagement() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _FamilyManagementSheet(
+        onDeleted: () => setState(() {}),
+      ),
+    );
+  }
+
   // ── Nav row ───────────────────────────────────────────────────────────────
 
-  Widget _navRow(IconData icon, String label, {String? subtitle}) {
+  Widget _navRow(IconData icon, String label,
+      {String? subtitle, VoidCallback? onTap}) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
       borderRadius: BorderRadius.circular(_kCardRadius),
       child: Padding(
         padding: const EdgeInsets.symmetric(
@@ -409,6 +483,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Sign Out ──────────────────────────────────────────────────────────────
 
+  void _confirmSignOut(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Sign out?',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: const Text(
+          'You will be returned to the welcome screen. Any unsaved changes will be lost.',
+          style: TextStyle(fontSize: 14, height: 1.4),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await AuthService().signOut();
+                if (!context.mounted) return;
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.warning,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Yes, sign out',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textSecondary,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Cancel',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSignOut() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: _kGutter),
@@ -416,7 +550,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         width: double.infinity,
         height: 52,
         child: ElevatedButton(
-          onPressed: () {},
+          onPressed: () => _confirmSignOut(context),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.warning,
             foregroundColor: Colors.white,
@@ -437,6 +571,164 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Family Management bottom sheet ───────────────────────────────────────────
+
+class _FamilyManagementSheet extends StatefulWidget {
+  final VoidCallback onDeleted;
+  const _FamilyManagementSheet({required this.onDeleted});
+
+  @override
+  State<_FamilyManagementSheet> createState() => _FamilyManagementSheetState();
+}
+
+class _FamilyManagementSheetState extends State<_FamilyManagementSheet> {
+  final _service = ContactService();
+
+  Future<void> _delete(BuildContext ctx, Contact c) async {
+    final confirmed = await showDialog<bool>(
+      context: ctx,
+      builder: (d) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Remove member?',
+            style: TextStyle(fontWeight: FontWeight.w700)),
+        content: Text(
+            'Remove ${c.name} from your family group?',
+            style: const TextStyle(fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(d).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(d).pop(true),
+            child: const Text('Remove',
+                style: TextStyle(color: AppColors.warning,
+                    fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _service.deleteContact(c.id);
+      widget.onDeleted();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 36),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.black12,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text('Family Management',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.navy)),
+          const SizedBox(height: 4),
+          const Text('Tap ··· to remove a member from your family group.',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+          const SizedBox(height: 20),
+          StreamBuilder<List<Contact>>(
+            stream: _service.contactsStream().timeout(
+              const Duration(seconds: 6),
+              onTimeout: (s) => s.add([]),
+            ),
+            builder: (ctx, snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Center(
+                    child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
+                ));
+              }
+              final contacts = snap.data ?? [];
+              if (contacts.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Text('No family members yet.',
+                        style: TextStyle(
+                            color: AppColors.textSecondary, fontSize: 13)),
+                  ),
+                );
+              }
+              return Column(
+                children: List.generate(contacts.length, (i) {
+                  final c = contacts[i];
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: AppColors.accent,
+                            child: Text(
+                              c.name.isNotEmpty
+                                  ? c.name[0].toUpperCase()
+                                  : '?',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(c.name,
+                                    style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500)),
+                                Text(c.relation,
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textSecondary)),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.more_vert,
+                                color: AppColors.textSecondary),
+                            onPressed: () => _delete(ctx, c),
+                          ),
+                        ],
+                      ),
+                      if (i < contacts.length - 1)
+                        const Divider(
+                            color: Colors.black12, height: 1, thickness: 1),
+                    ],
+                  );
+                }),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
