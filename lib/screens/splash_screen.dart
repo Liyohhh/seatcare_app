@@ -1,9 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/theme.dart';
+import '../services/auth_service.dart';
+import 'admin_main_screen.dart';
 import 'login_screen.dart';
+import 'main_screen.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkSession();
+  }
+
+  /// If the user already has an active Supabase session, skip the login
+  /// screen and route them directly to their role-appropriate screen.
+  Future<void> _checkSession() async {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) return; // no session — stay on splash
+
+    final role = await AuthService().getUserRole();
+    if (!mounted) return;
+
+    final dest = role == 'admin'
+        ? const AdminMainScreen()
+        : const MainScreen();
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => dest),
+      (r) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +56,12 @@ class SplashScreen extends StatelessWidget {
                 Image.asset(
                   'assets/images/Waby_Logo_clean.png',
                   height: 150,
+                  errorBuilder: (_, __, ___) => const Icon(
+                      Icons.child_care, size: 100, color: Colors.white),
                 ),
 
                 const SizedBox(height: 24),
 
-                // App name
                 const Text(
                   'Waby',
                   style: TextStyle(

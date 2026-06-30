@@ -15,9 +15,9 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _index = 0;
 
-  late final List<Widget> _pages = [
+  final List<Widget> _pages = [
     const HomeScreen(),
-    ContactsScreen(showBack: false), // Family tab = emergency contacts (CRUD)
+    ContactsScreen(showBack: false),
     const SettingsScreen(),
   ];
 
@@ -42,11 +42,21 @@ class _MainScreenState extends State<MainScreen> {
           type: BottomNavigationBarType.fixed,
           selectedItemColor: Colors.white,
           unselectedItemColor: Colors.white70,
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.groups), label: 'Family'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.settings), label: 'Setting'),
+                icon: Icon(Icons.home_outlined),
+                activeIcon: Icon(Icons.home),
+                label: 'Home'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.groups_outlined),
+                activeIcon: Icon(Icons.groups),
+                label: 'Family'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.settings_outlined),
+                activeIcon: Icon(Icons.settings),
+                label: 'Settings'),
           ],
         ),
       ),

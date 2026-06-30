@@ -5,27 +5,32 @@ class AuthService {
   final SupabaseClient _client = Supabase.instance.client;
 
   // ── Google Sign-In ────────────────────────────────────────────────────────
-  // Replace this with your Web Client ID from Google Cloud Console.
-  // Dashboard → APIs & Services → Credentials → OAuth 2.0 Client IDs (Web).
+  // serverClientId is the WEB client ID (not the Android one).
+  // The Android OAuth client exists only to authorise the on-device request
+  // using SHA-1 + package name; the token it returns is stamped with the Web
+  // client as its audience — which is exactly what Supabase validates.
   static const _webClientId =
-      'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
+      '230534811936-e8lf1nemi5svesfp4c9raabm8tg5dpph.apps.googleusercontent.com';
 
-  /// Sign in via Google, then pass the ID token to Supabase.
-  /// Returns `true` on success.
-  Future<bool> signInWithGoogle() async {
-    final googleUser = await GoogleSignIn(serverClientId: _webClientId).signIn();
-    if (googleUser == null) return false; // user cancelled
+  /// Sign in via Google and pass the ID token to Supabase.
+  /// Throws a [String] message if the user cancels or no token is returned.
+  Future<AuthResponse> signInWithGoogle() async {
+    final googleSignIn = GoogleSignIn(serverClientId: _webClientId);
+    final googleUser = await googleSignIn.signIn();
+
+    if (googleUser == null) throw 'Sign-in cancelled';
 
     final googleAuth = await googleUser.authentication;
     final idToken = googleAuth.idToken;
-    if (idToken == null) return false;
+    final accessToken = googleAuth.accessToken;
 
-    await _client.auth.signInWithIdToken(
+    if (idToken == null) throw 'No ID token returned from Google';
+
+    return _client.auth.signInWithIdToken(
       provider: OAuthProvider.google,
       idToken: idToken,
-      accessToken: googleAuth.accessToken,
+      accessToken: accessToken,
     );
-    return true;
   }
 
   /// Sign in with email + password. Throws [AuthException] on failure.
@@ -76,4 +81,21 @@ class AuthService {
 
   /// Currently authenticated user, null if not signed in.
   User? get currentUser => _client.auth.currentUser;
+
+  /// Fetches the role for the currently signed-in user from the `profiles`
+  /// table. Returns `'user'` as the default if the row or column is missing.
+  Future<String> getUserRole() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return 'user';
+    try {
+      final data = await _client
+          .from('profiles')
+          .select('role')
+          .eq('id', userId)
+          .maybeSingle();
+      return (data?['role'] as String?) ?? 'user';
+    } catch (_) {
+      return 'user';
+    }
+  }
 }

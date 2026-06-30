@@ -431,23 +431,13 @@ class _ChildCard extends StatelessWidget {
     required this.battery,
   });
 
-  Color get _cardBg => switch (status) {
-        _CardStatus.safe    => AppColors.safeCard,
-        _CardStatus.caution => const Color(0xFFFFF8E1),
-        _CardStatus.warning => AppColors.warningCard,
-      };
+  // All cards share the same calm blue background.
+  Color get _cardBg => AppColors.safeCard;
 
-  Color get _accentColor => switch (status) {
-        _CardStatus.safe    => AppColors.safe,
-        _CardStatus.caution => const Color(0xFFF59E0B),
-        _CardStatus.warning => AppColors.warning,
-      };
-
-  // Caution pills stay blue — latched+near are fine, only battery is low.
-  Color get _pillColor => switch (status) {
-        _CardStatus.safe    => AppColors.accent,
-        _CardStatus.caution => AppColors.accent,
-        _CardStatus.warning => AppColors.warning,
+  Color get _badgeColor => switch (status) {
+        _CardStatus.safe    => AppColors.safe,    // green — all good
+        _CardStatus.caution => AppColors.accent,  // blue  — attention, no alarm
+        _CardStatus.warning => AppColors.warning, // red   — triggers escalation
       };
 
   String get _badgeLabel => switch (status) {
@@ -455,6 +445,17 @@ class _ChildCard extends StatelessWidget {
         _CardStatus.caution => 'CAUTION',
         _CardStatus.warning => 'WARNING',
       };
+
+  // Per-indicator severity: each pill reflects its own danger level.
+  // • Far = critical (🔴)   • Unlatched = caution (🟡)   • Low battery = caution (🟡)
+  Color get _buckleColor =>
+      buckled ? AppColors.safe : AppColors.caution;
+
+  Color get _nearColor =>
+      near ? AppColors.safe : AppColors.warning;
+
+  Color get _batteryColor =>
+      battery > 20 ? AppColors.safe : AppColors.caution;
 
   @override
   Widget build(BuildContext context) {
@@ -496,7 +497,7 @@ class _ChildCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _accentColor,
+                  color: _badgeColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(_badgeLabel,
@@ -510,14 +511,22 @@ class _ChildCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _pill(buckled ? Icons.link : Icons.link_off,
-                  buckled ? 'Latched' : 'Unlatched'),
+              _pill(
+                buckled ? Icons.link : Icons.link_off,
+                buckled ? 'Latched' : 'Unlatched',
+                _buckleColor,
+              ),
               const SizedBox(width: 8),
-              _pill(Icons.location_on, near ? 'Near' : 'Far'),
+              _pill(
+                near ? Icons.location_on : Icons.location_off,
+                near ? 'Near' : 'Far',
+                _nearColor,
+              ),
               const SizedBox(width: 8),
               _pill(
                 battery <= 20 ? Icons.battery_alert : Icons.battery_full,
                 '$battery%',
+                _batteryColor,
               ),
             ],
           ),
@@ -526,12 +535,12 @@ class _ChildCard extends StatelessWidget {
     );
   }
 
-  Widget _pill(IconData icon, String label) {
+  Widget _pill(IconData icon, String label, Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: _pillColor,
+          color: color,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
